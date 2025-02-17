@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>線上解籤系統</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>線上解籤系統</h1>
+        
+        <form id="fortuneForm">
+            <div class="form-group">
+                <label for="name">姓名：</label>
+                <input type="text" id="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label>生日：</label>
+                <div class="birthday-group">
+                    <select id="birth-year" required>
+                        <option value="">年</option>
+                    </select>
+                    <select id="birth-month" required>
+                        <option value="">月</option>
+                    </select>
+                    <select id="birth-day" required>
+                        <option value="">日</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="fortune">選擇籤詩：</label>
+                <select id="fortune" required>
+                    {% for fortune in fortunes %}
+                    <option value="{{ fortune.id }}">{{ fortune.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="question">您的問題：</label>
+                <textarea id="question" required></textarea>
+            </div>
+            
+            <button type="submit">解籤</button>
+        </form>
+        
+        <div id="result" style="display: none;">
+            <h2>解籤結果</h2>
+            <div id="interpretation"></div>
+        </div>
+    </div>
+    
+    <script>
+        // 生成年份選項（1920-2024）
+        const yearSelect = document.getElementById('birth-year');
+        const currentYear = new Date().getFullYear();
+        for (let year = currentYear; year >= 1920; year--) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year + '年';
+            yearSelect.appendChild(option);
+        }
+
+        // 生成月份選項
+        const monthSelect = document.getElementById('birth-month');
+        for (let month = 1; month <= 12; month++) {
+            const option = document.createElement('option');
+            option.value = month.toString().padStart(2, '0');
+            option.textContent = month + '月';
+            monthSelect.appendChild(option);
+        }
+
+        // 根據年月更新日期選項
+        function updateDays() {
+            const year = parseInt(yearSelect.value) || new Date().getFullYear();
+            const month = parseInt(monthSelect.value) || 1;
+            const daySelect = document.getElementById('birth-day');
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            // 保存當前選中的日期
+            const currentDay = daySelect.value;
+            
+            // 清空現有選項
+            daySelect.innerHTML = '<option value="">日</option>';
+            
+            // 添加新的日期選項
+            for (let day = 1; day <= daysInMonth; day++) {
+                const option = document.createElement('option');
+                option.value = day.toString().padStart(2, '0');
+                option.textContent = day + '日';
+                daySelect.appendChild(option);
+            }
+            
+            // 如果之前選中的日期仍然有效，則恢復選中
+            if (currentDay && currentDay <= daysInMonth) {
+                daySelect.value = currentDay;
+            }
+        }
+
+        // 監聽年月變化
+        yearSelect.addEventListener('change', updateDays);
+        monthSelect.addEventListener('change', updateDays);
+
+        // 初始化日期選項
+        updateDays();
+
+        document.getElementById('fortuneForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const year = document.getElementById('birth-year').value;
+            const month = document.getElementById('birth-month').value;
+            const day = document.getElementById('birth-day').value;
+            const birthday = `${year}-${month}-${day}`;
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                birthday: birthday,
+                fortune_id: document.getElementById('fortune').value,
+                question: document.getElementById('question').value
+            };
+            
+            try {
+                const response = await fetch('/interpret', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('result').style.display = 'block';
+                    document.getElementById('interpretation').innerHTML = data.interpretation;
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('發生錯誤，請稍後再試');
+            }
+        });
+    </script>
+</body>
+</html> 
