@@ -9,11 +9,12 @@ load_dotenv()  # 讀取 .env 檔案
 app = Flask(__name__)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+# 初始化 OpenAI 客戶端
+client = OpenAI(api_key=OPENAI_API_KEY)  # 正確初始化 OpenAI 客戶端
+
 if not OPENAI_API_KEY:
     raise ValueError("❌ 環境變數 `OPENAI_API_KEY` 未設定，請在系統中設定 API Key！")
 
-# 初始化 OpenAI 客戶端
-client = OpenAI(api_key=OPENAI_API_KEY)  # 正確初始化 OpenAI 客戶端
 
 # 載入籤詩數據
 with open('data/fortunes.json', 'r', encoding='utf-8') as f:
